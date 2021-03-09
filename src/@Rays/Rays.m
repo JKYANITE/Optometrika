@@ -111,6 +111,7 @@ classdef Rays
     
     properties
         r = []; % a matrix of ray starting positions
+        r_prev=[];% matrix of previous (after ray tracing)
         n = []; % a matrix of ray directions
         w = [];  % a vector of ray wavelengths
         I = [];         % a vector of ray intensities
@@ -278,6 +279,7 @@ classdef Rays
                 self.n = [ x(:) y(:) z(:) ];
                 self.cnt = size( self.n, 1 );
                 self.r = repmat( pos, self.cnt, 1 );
+                self.r_prev = repmat( pos, self.cnt, 1 );
                 if norm( ax ) ~= 0
                     self.n = rodrigues_rot( self.n, ax, asin( norm( ax ) ) );
                 end
@@ -860,15 +862,10 @@ classdef Rays
             % find intersections and set outcoming rays starting points
             [ rays_out, nrms ] = self.intersection( surf );
             
-            
-            %gpl1= dot( rays_out.r-self.r, self.n, 2 );
-            rays_out.gpl =  dot( rays_out.r-self.r, self.n, 2 );
-            rays_out.opl =  self.opl+rays_out.gpl.*self.nrefr;
-            
+                     
             
             miss = rays_out.I < 0; % indices of the rays
             
-            rays_out.gpl(miss)=NaN;
             
             med1 = surf.glass{1};
             med2 = surf.glass{2};
@@ -975,6 +972,10 @@ classdef Rays
                 rays_out.r( miss, : ) = Inf;
             end
             rays_out.I( isnan( rays_out.I ) ) = 0;
+            
+            rays_out.gpl =  dot( rays_out.r-self.r, self.n, 2 );
+            rays_out.opl =  self.opl+rays_out.gpl.*self.nrefr;
+            rays_out.r_prev =  self.r;
             %rays_out.I( rays_out.n( :, 1 ) < 0 ) = 0; % zero rays that point back to the source
         end
         
@@ -982,6 +983,7 @@ classdef Rays
         function rc = copy( self )
             rc = Rays;  % initialize the class instance
             rc.r = self.r; % a matrix of ray starting positions
+            rc.r_prev = self.r_prev; % a matrix of ray starting positions
             rc.n = self.n; % a matrix of ray directions
             rc.w = self.w;  % a vector of ray wavelengths
             rc.I = self.I;         % a vector of ray intensities
@@ -997,6 +999,7 @@ classdef Rays
         function self = append( self, rays )
             % append rays to the current bundle
             self.r = [ self.r; rays.r ];
+            self.r_prev = [ self.r_prev; rays.r_prev ];
             self.n = [ self.n; rays.n ];
             self.w = [ self.w; rays.w ];
             self.I = [ self.I; rays.I ];
@@ -1012,6 +1015,7 @@ classdef Rays
             % pick a subset of rays defined by inds in the current bundle
             rays = Rays; % allocate an instance of rays
             rays.r = self.r( inds, : );
+            rays.r_prev = self.r_prev( inds, : );
             rays.n = self.n( inds, : );
             rays.w = self.w( inds, : );
             rays.I = self.I( inds, : );
@@ -1027,6 +1031,7 @@ classdef Rays
             % remove rays with zero intensity
             ind = self.I == 0;
             self.r( ind, : ) = [];
+            self.r_prev( ind, : ) = [];
             self.n( ind, : ) = [];
             self.w( ind, : ) = [];
             self.I( ind, : ) = [];

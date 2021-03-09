@@ -170,17 +170,17 @@ classdef Bench < handle
                     else
                         sym = '*:';
                     end
-                    for i = 1 : length( rays ) - 1
+                    for i = 2 : length( rays )
                         vis = ( rays( i ).I ~= 0 ) & ...
                                 isfinite( sum( rays( i ).r.^2, 2 ) ) & ...
-                                isfinite( sum( rays( i + 1 ).r.^2, 2 ) );  % visible rays
-                        real = dot( rays( i + 1 ).r - rays( i ).r, rays( i ).n, 2 ) > 0; % real rays (vs. virtual for virtual image)
+                                isfinite( sum( rays( i ).r_prev.^2, 2 ) );  % visible rays
+                        real = dot( rays( i ).r - rays( i ).r_prev, rays( i ).n, 2 ) > 0; % real rays (vs. virtual for virtual image)
                         [ unique_colors, ~, ic ] = unique( rays( i ).color, 'rows' );
                         for j = 1 : size( unique_colors, 1 )
                             cvis = vis & real & ( ic == j );
-                            plot3( [ rays( i ).r( cvis, 1 )';  rays( i + 1 ).r( cvis, 1 )' ], ...
-                                   [ rays( i ).r( cvis, 2 )';  rays( i + 1 ).r( cvis, 2 )' ], ...
-                                   [ rays( i ).r( cvis, 3 )';  rays( i + 1 ).r( cvis, 3 )' ], sym, 'Color', unique_colors( j, : ) );
+                            plot3( [ rays( i ).r( cvis, 1 )';  rays( i).r_prev( cvis, 1 )' ], ...
+                                   [ rays( i ).r( cvis, 2 )';  rays( i).r_prev( cvis, 2 )' ], ...
+                                   [ rays( i ).r( cvis, 3 )';  rays( i ).r_prev( cvis, 3 )' ], sym, 'Color', unique_colors( j, : ) );
                         end
                    end
                 elseif strcmp( draw_fl, 'arrows' )
@@ -375,24 +375,29 @@ function rays = trace_recursive( self, rays_in, out_fl )
                 %Calculate possible intersection with all elements
                 for i = 1 : self.cnt % loop through the optic system
                     tmp_rays( i ) = rays( jj ).interaction( self.elem{ i }, out_fl );  
+                    
+                    %if ray already I=0 before interaction
+                    tmp_rays( i ).gpl(rays( jj ).I < 1e-12)=NaN;
+                    
+                    gpl_dbg = [tmp_rays(i)];
+                    gpl_dbg.gpl;
+                    gpl_dbg.I;
+                    
+                    
+                    %Rays that miss have GPL=0
+                    %Rays that end have I=0
+  
                 end
-
-                %tmp_rays( i ) = rays( jj-1 ).interaction( self.elem{ 3 }, out_fl );
-
                 %Choose the shortest & valid one
-                gpl=[tmp_rays.gpl];
+                gpl=[tmp_rays.gpl];  
+                I  = [tmp_rays.I];
+                gpl(gpl < 100*eps)=NaN; 
                 
-                %is not valid ray that has not missed
-                gpl(~([tmp_rays.I] >=eps)) = NaN;
-                
-                %avoid the current element(distance = 0)
-                % and elements in negative direction (distance < 0)
-                gpl(gpl < 100*eps) = NaN;
-                
-                [~,indx]=min(gpl,[],2);
+                [gpl_indx,indx]=min(gpl,[],2);
 
                 %Abort condition. Check how many valid ray's were in the last
-                valid_rays_cnt=sum(([gpl] >=0),'all');
+                valid_rays_cnt=sum((gpl >=100*eps & ~isinf(gpl)),'all');
+                
                 abort = (valid_rays_cnt==0);
                 
                 if(~abort)
@@ -400,8 +405,8 @@ function rays = trace_recursive( self, rays_in, out_fl )
                     %Build the new ray vector depending on selected index
                     tmp_rays_new=Rays();
                     for i = 1 : self.cnt
-                        sel = find(indx==i);                  
-                        tmp_rays_new=tmp_rays_new.append(tmp_rays(i).subset(sel));
+                        sel = (indx==i & ~isnan(gpl_indx));                  
+                        tmp_rays_new=tmp_rays_new.append(tmp_rays(i).subset(find(sel==1)));
                     end 
 
                     jj=jj+1;

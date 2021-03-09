@@ -25,7 +25,13 @@ act = example1();
 exp = 97.959183673469383;  % N-BAK 4
 %exp = 1.028571428571429e+02;  % bk7
 verifyEqual(testCase,act,exp,'AbsTol',100*eps(exp))
+end
 
+function testExample1_rec(testCase)
+act = example1_rec();
+exp = 97.959183673469383;  % N-BAK 4
+%exp = 1.028571428571429e+02;  % bk7
+verifyEqual(testCase,act,exp,'AbsTol',100*eps(exp))
 end
 
 function testExample2(testCase)
