@@ -3,7 +3,7 @@ function TransComp()
 %  analysis of light transmittance of glass fibre of cylindrical section
 %
 %  Zheng Ji, 11.07.2022
-%
+
 
 
 startup;
@@ -304,3 +304,4 @@ bench.append( lens7b );
 lowerbound = Plane( [ O+2*D 0 0 ], 200, 200, { RI_matrix, 'air' } );
 bench.append( lowerbound );
 end
+% model construct

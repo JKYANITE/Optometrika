@@ -22,7 +22,7 @@ bs1b = Plane( [ 10+20 0 0 ] , 100*sqrt(2), {'bk7' medium} );
 bs2a = Plane( [ 60 0 0 ] , 100*sqrt(2), { medium  'bk7' } );
 bs2b = Plane( [ 60+20 0 0 ] , 100*sqrt(2), {'bk7' medium});
 
-icase = '1bs untilted';
+icase = '2bs tilted';
 switch(icase)
     case '1bs untilted'
         bench.append( bs1a);
@@ -51,7 +51,7 @@ ref_bench.append( screenwf );
 
 %variation in position
 rays_in = Rays( 5000, 'source', [ 1 0 0 ], [ 1 0 0 ], 10e-6, 'square',medium,1064e-9,[],0);
-rays_out = bench.trace_recursive( rays_in );
+rays_out = bench.trace( rays_in );
 rays2_out = ref_bench.trace( rays_in );
 bench.draw(rays_out, 'lines');
 
@@ -102,4 +102,4 @@ zlabel('Offset (mm)');
 title('Beam Offset on screen (reference w/o glass)');
 
 
-suptitle(['Example 18: ' icase]);
+subtitle(['Example 18: ' icase]);
