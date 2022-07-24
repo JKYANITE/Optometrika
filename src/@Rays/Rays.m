@@ -948,6 +948,7 @@ classdef Rays
                         rs = ( rn .* cs1 - cs2 ) ./ ( rn .* cs1 + cs2 );
                         rp = ( cs1 - rn .* cs2 ) ./ ( cs1 + rn .* cs2 );
                         refraction_loss = ( abs( rs ).^2 + abs( rp ).^2 ) / 2;
+                        transmission = 1-refraction_loss;
                         % handle total internal reflection
                         tot = find(imag( cs2 ) ~= 0);
                         % rays_out.n( tot, : ) = 0; % zero direction for such rays
